@@ -1,6 +1,6 @@
 # 🛒 Ecommerce Monitor
 
-## 📌 Descripción
+##  Descripción
 
 Este proyecto monitorea cambios en productos de un e-commerce mediante scraping automático.
 
@@ -12,7 +12,7 @@ El sistema detecta:
 
 ---
 
-## 🧱 Tecnologías usadas
+##  Tecnologías usadas
 
 * Python + Playwright → scraping
 * Node.js + Express → API
@@ -20,7 +20,7 @@ El sistema detecta:
 
 ---
 
-## ⚙️ Estructura del proyecto
+##  Estructura del proyecto
 
 ```
 ecommerce-monitor/
@@ -32,7 +32,7 @@ ecommerce-monitor/
 
 ---
 
-## 🚀 Cómo ejecutar
+##  Cómo ejecutar
 
 ### 1. Iniciar API
 
@@ -52,7 +52,7 @@ python3 main.py
 
 ---
 
-## 📦 Flujo del sistema
+##  Flujo del sistema
 
 1. Python scrapea productos desde la web
 2. Envía los datos a la API (Node.js)
@@ -61,7 +61,7 @@ python3 main.py
 
 ---
 
-## 🔍 Endpoint principal
+##  Endpoint principal
 
 ### POST /snapshots
 
@@ -89,7 +89,7 @@ http://localhost:3000/snapshots/changes
 
 ---
 
-## 📊 Ejemplo de respuesta
+##  Ejemplo de respuesta
 
 ```json
 {
@@ -107,7 +107,7 @@ http://localhost:3000/snapshots/changes
 
 ---
 
-## 🧠 Funcionalidades clave
+##  Funcionalidades clave
 
 * Scraping concurrente con asyncio
 * Uso de Playwright para automatización web
@@ -117,9 +117,9 @@ http://localhost:3000/snapshots/changes
 
 ---
 
-## 📡 Comunicación Worker ↔ API
+##  Comunicación Worker ↔ API
 
-### 📦 JSON enviado por el worker
+###  JSON enviado por el worker
 
 El worker (Python) envía un arreglo de productos en formato JSON:
 
@@ -143,7 +143,7 @@ Cada objeto contiene:
 
 ---
 
-## 🔁 ¿Qué hace el worker si la API no responde?
+## ¿Qué hace el worker si la API no responde?
 
 El worker maneja errores usando `try/except`.
 
@@ -159,7 +159,7 @@ Mejoras posibles:
 
 ---
 
-## ⚠️ ¿Qué hace la API si recibe datos malformados?
+##  ¿Qué hace la API si recibe datos malformados?
 
 La API valida que los datos sean un array:
 
@@ -176,7 +176,7 @@ Respuestas:
 
 ---
 
-## 📊 ¿Cómo sabe el worker que todo salió bien?
+##  ¿Cómo sabe el worker que todo salió bien?
 
 La API responde con un resumen:
 
