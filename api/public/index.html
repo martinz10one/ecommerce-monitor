@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ecommerce Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#000;color:#e5e5e5;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+    ::selection{background:rgba(34,211,238,.2);color:#fff}
+    .wrapper{max-width:680px;margin:0 auto;padding:48px 24px}
+    .prompt{font-family:'JetBrains Mono',monospace;font-size:13px;color:#22d3ee;margin-bottom:24px}
+    h1{font-family:'JetBrains Mono',monospace;font-size:28px;color:#fff;margin-bottom:4px}
+    h2{font-family:'JetBrains Mono',monospace;font-size:18px;color:#fff;margin-bottom:16px}
+    .desc{color:#737373;font-size:14px;line-height:1.6;margin-bottom:32px}
+    hr{border:0;border-top:1px solid #1a1a1a;margin:24px 0}
+    .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+    .filters button{padding:6px 14px;border-radius:0;font-size:13px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .15s}
+    .filters button.active{background:#22d3ee;color:#000;border:1px solid #22d3ee}
+    .filters button:not(.active){background:0 0;color:#737373;border:1px solid #1a1a1a}
+    .filters button:not(.active):hover{border-color:#22d3ee;color:#fff}
+    .change{padding:12px 0;border-bottom:1px solid #1a1a1a}
+    .change:last-child{border-bottom:0}
+    .change-title{color:#fff;font-size:14px;font-weight:500;margin-bottom:2px}
+    .change-meta{font-family:'JetBrains Mono',monospace;font-size:12px}
+    .tag{display:inline-block;font-size:11px;font-family:'JetBrains Mono',monospace;padding:1px 8px;border-radius:0;margin-right:6px}
+    .tag.price{background:rgba(34,211,238,.15);color:#22d3ee;border:1px solid rgba(34,211,238,.3)}
+    .tag.new{background:rgba(52,211,153,.15);color:#34d399;border:1px solid rgba(52,211,153,.3)}
+    .tag.removed{background:rgba(248,113,113,.15);color:#f87171;border:1px solid rgba(248,113,113,.3)}
+    .empty{color:#525252;font-size:14px;font-family:'JetBrains Mono',monospace}
+    .loading{color:#737373;font-size:14px}
+    .arrow{color:#22d3ee;font-family:'JetBrains Mono',monospace}
+    .price-old{color:#737373;text-decoration:line-through}
+    .price-new{color:#fff}
+    .status-bar{margin-top:32px;padding-top:16px;border-top:1px solid #1a1a1a;font-family:'JetBrains Mono',monospace;font-size:12px;color:#525252}
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="prompt">$ ./ecommerce-monitor</div>
+    <h1>Ecommerce Monitor</h1>
+    <p class="desc">Monitoreo de cambios de precios y disponibilidad en productos de e-commerce.</p>
+
+    <div class="filters">
+      <button class="active" data-filter="all">Todos</button>
+      <button data-filter="price">Precio</button>
+      <button data-filter="new">Nuevos</button>
+      <button data-filter="removed">Eliminados</button>
+    </div>
+
+    <hr />
+
+    <div id="content">
+      <div class="loading">Cargando cambios...</div>
+    </div>
+
+    <div id="statusBar" class="status-bar">$ conectando...</div>
+  </div>
+
+  <script>
+    const API = '';
+
+    const state = {
+      filter: 'all',
+      changes: []
+    };
+
+    async function fetchChanges() {
+      try {
+        const res = await fetch(`${API}/snapshots/changes`);
+        const data = await res.json();
+        state.changes = data.changes || [];
+        render();
+        updateStatus();
+      } catch (e) {
+        document.getElementById('content').innerHTML =
+          '<div class="empty">$ error: no se pudo conectar al servidor</div>';
+        document.getElementById('statusBar').textContent = `$ error: ${e.message}`;
+      }
+    }
+
+    function render() {
+      const container = document.getElementById('content');
+      const filtered = state.filter === 'all'
+        ? state.changes
+        : state.changes.filter(c => c.type === state.filter);
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty">$ No hay cambios que mostrar</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(c => {
+        if (c.type === 'price') {
+          return `
+            <div class="change">
+              <div class="change-title">${escape(c.title)}</div>
+              <div class="change-meta">
+                <span class="tag price">PRECIO</span>
+                <span class="price-old">£${c.oldPrice}</span>
+                <span class="arrow"> → </span>
+                <span class="price-new">£${c.newPrice}</span>
+                <span style="color:#22d3ee"> (${c.change})</span>
+              </div>
+            </div>`;
+        }
+        if (c.type === 'new') {
+          return `
+            <div class="change">
+              <div class="change-title">${escape(c.product.title)}</div>
+              <div class="change-meta">
+                <span class="tag new">NUEVO</span>
+                <span style="color:#34d399">${c.product.price}</span>
+              </div>
+            </div>`;
+        }
+        if (c.type === 'removed') {
+          return `
+            <div class="change">
+              <div class="change-title">${escape(c.product.title)}</div>
+              <div class="change-meta">
+                <span class="tag removed">ELIMINADO</span>
+                <span style="color:#f87171">${c.product.price}</span>
+              </div>
+            </div>`;
+        }
+        return '';
+      }).join('');
+    }
+
+    function updateStatus() {
+      const total = state.changes.length;
+      const bar = document.getElementById('statusBar');
+      const now = new Date().toLocaleTimeString();
+      bar.textContent = `$ ${total} cambios detectados · última actualización: ${now}`;
+    }
+
+    function escape(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    document.querySelectorAll('.filters button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filters button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.filter = btn.dataset.filter;
+        render();
+      });
+    });
+
+    fetchChanges();
+    setInterval(fetchChanges, 15000);
+  </script>
+</body>
+</html>

@@ -1,13 +1,9 @@
 import express from 'express';
-import Snapshot from '../db/snapshot.model.js';
+import { saveSnapshot, getLastSnapshot, getLastTwoSnapshots } from '../db/storage.js';
 import { compareSnapshots } from '../services/diff.js';
 
 const router = express.Router();
 
-/**
- * POST /snapshots
- * Recibe productos, guarda snapshot y calcula cambios vs el anterior
- */
 router.post('/', async (req, res) => {
     try {
         const products = req.body;
@@ -16,18 +12,10 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: "Debe ser un array de productos" });
         }
 
-        // 🟢 Obtener último snapshot
-        const lastSnapshot = await Snapshot.findOne().sort({ createdAt: -1 });
+        const lastSnapshot = await getLastSnapshot();
+        const newSnapshot = await saveSnapshot(products);
 
-        // 🟢 Crear nuevo snapshot
-        const newSnapshot = await Snapshot.create({
-            products
-        });
-
-        // 🔥 Comparar (si no hay anterior, devuelve [])
         const changes = compareSnapshots(lastSnapshot, newSnapshot);
-
-        console.log("📊 Cambios detectados:", changes);
 
         res.json({
             message: "Snapshot guardado",
@@ -36,34 +24,22 @@ router.post('/', async (req, res) => {
         });
 
     } catch (error) {
-        console.error("❌ Error en POST /snapshots:", error);
+        console.error("Error en POST /snapshots:", error);
         res.status(500).json({ error: "Error interno del servidor" });
     }
 });
 
-
-/**
- * GET /snapshots/changes
- * Devuelve cambios entre los 2 últimos snapshots
- * Filtro opcional: ?type=price | new | removed
- */
 router.get('/changes', async (req, res) => {
     try {
         const { type } = req.query;
+        const [newSnap, oldSnap] = await getLastTwoSnapshots();
 
-        const snapshots = await Snapshot.find()
-            .sort({ createdAt: -1 })
-            .limit(2);
-
-        if (snapshots.length < 2) {
+        if (!oldSnap) {
             return res.json({ changes: [] });
         }
 
-        const [newSnap, oldSnap] = snapshots;
-
         let changes = compareSnapshots(oldSnap, newSnap);
 
-        // 🔥 filtro opcional
         if (type) {
             changes = changes.filter(c => c.type === type);
         }
@@ -71,7 +47,7 @@ router.get('/changes', async (req, res) => {
         res.json({ changes });
 
     } catch (error) {
-        console.error("❌ Error en GET /snapshots/changes:", error);
+        console.error("Error en GET /snapshots/changes:", error);
         res.status(500).json({ error: "Error interno del servidor" });
     }
 });
