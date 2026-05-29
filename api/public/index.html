@@ -36,6 +36,12 @@
     .price-old{color:#737373;text-decoration:line-through}
     .price-new{color:#fff}
     .status-bar{margin-top:32px;padding-top:16px;border-top:1px solid #1a1a1a;font-family:'JetBrains Mono',monospace;font-size:12px;color:#525252}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:0 0;border:1px solid #1a1a1a;color:#e5e5e5;font-family:'JetBrains Mono',monospace;font-size:13px;cursor:pointer;transition:all .15s}
+    .btn:hover{border-color:#22d3ee;color:#fff}
+    .btn:active{background:#22d3ee;color:#000}
+    .btn:disabled{opacity:.4;cursor:not-allowed}
+    .btn .spin{display:inline-block;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
@@ -50,6 +56,8 @@
       <button data-filter="new">Nuevos</button>
       <button data-filter="removed">Eliminados</button>
     </div>
+
+    <button class="btn" id="simulateBtn" onclick="simulateScrape()">▶ Simular scrape</button>
 
     <hr />
 
@@ -67,6 +75,44 @@
       filter: 'all',
       changes: []
     };
+
+    const productsDB = [
+      'Laptop Gamer', 'Mouse RGB', 'Teclado Mecánico', 'Monitor 27"', 
+      'Audífonos Bluetooth', 'Webcam HD', 'Micrófono USB', 'Silla Ergonómica',
+      'Hub USB-C', 'SSD 1TB', 'RAM 32GB', 'Cable HDMI 2.1',
+      'Mousepad XXL', 'Base para Laptop', 'Lámpara LED', 'Escritorio Eléctrico'
+    ];
+
+    function randomProducts() {
+      const count = 4 + Math.floor(Math.random() * 4);
+      const shuffled = [...productsDB].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, count).map(title => ({
+        title,
+        price: `£${(5 + Math.random() * 200).toFixed(2)}`
+      }));
+    }
+
+    async function simulateScrape() {
+      const btn = document.getElementById('simulateBtn');
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Simulando...';
+
+      try {
+        const products = randomProducts();
+        const res = await fetch(`${API}/snapshots`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(products)
+        });
+        const data = await res.json();
+        await fetchChanges();
+        btn.innerHTML = `✓ ${data.total} productos · ${data.changes.length} cambios`;
+        setTimeout(() => { btn.innerHTML = '▶ Simular scrape'; btn.disabled = false; }, 2000);
+      } catch (e) {
+        btn.innerHTML = '✗ Error';
+        btn.disabled = false;
+      }
+    }
 
     async function fetchChanges() {
       try {
